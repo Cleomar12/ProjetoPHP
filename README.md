@@ -14,7 +14,6 @@ Exemplo register/login simples com CRUD mysql
   + routes.php : array que contém as rotas, controllers e metodos chamada pela Router.
 * config/: Diretório que contém os arquivos de configuração da aplicação.
 	+ database.php: Arquivo que contém as configurações do banco de dados.
-	+ routes.php : Arquivo que contém as rotas da aplicação.
 * public/ : Diretório que contém os arquivos públicos da aplicação.
 	+ index.php: Arquivo que é o ponto de entrada da aplicação.
 	+ .htaccess: Arquivo que contém as configurações do servidor Apache.
