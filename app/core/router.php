@@ -20,7 +20,7 @@ class Router {
         if ($url === '/' || $url == '' ){
             $url = '/';
         }
-        echo $url;
+        echo $url; // apenas para teste
         if (array_key_exists($url, $this->routes)) {
             $route = $this->routes[$url];
 

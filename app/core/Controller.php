@@ -1,8 +1,18 @@
 <?php
 namespace app\core;
 
+require_once __DIR__ . '/../services/session.php';
+
+use App\services\Session; 
+
 class Controller {
     protected string $basePath = '';
+    protected Session  $session;
+
+    public function __construct() {
+        $this->session = new Session();
+    }
+    
     protected function render(string $view, array $data = []) {
         extract($data);
         $file = __DIR__ . "/../views/$view.php";

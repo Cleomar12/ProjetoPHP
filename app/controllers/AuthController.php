@@ -16,17 +16,20 @@ class AuthController extends Controller {
             $password = $_POST['password'] ?? null;
             
             if (!$username || !$password){
-                echo "Preencha usuário e senha.";
+                $this->session->flash('error', 'Preencha usuário e senha!');
+                $this->redirect('/login');
                 return;
             }
 
             $user = User::verify($username, $password);
 
             if ($user){
-                $_SESSION['user'] = $user['username'];
+                $this->session->set('user', $user['username']);
+                $this->session->flash('success', 'Login realizado com sucesso!');
                 $this->redirect('/dashboard'); // Redireciona após login
             } else {
-                echo "Usuário ou senha inválidos!";
+                $this->session->flash('error', 'Usuário ou senha inválidos!');
+                $this->redirect('/login');
             }
         } else {
             // Se for GET, apenas mostra a view
@@ -41,38 +44,42 @@ class AuthController extends Controller {
             $passwordConfirm = $_POST['password_confirm'] ?? null;
 
             if (!$username || !$password || !$passwordConfirm) {
-                echo "Preencha todos os campos.";
+                $this->session->flash('error', 'Preencha todos os campos.');
+                $this->redirect('/register');
                 return;
             }
 
             if ($password !== $passwordConfirm) {
-                echo "As senhas não coincidem.";
+                $this->session->flash('error', 'As senhas não coincidem.');
+                $this->redirect('/register');
                 return;
             }
 
             if (User::findByUsername($username)) {
-                echo "Usuário já existe!";
+                $this->session->flash('error', 'Usuário já existe!');
+                $this->redirect('/register');
                 return;
             }
 
             $created = User::create($username, $password);
-            echo "Registro realizado com sucesso!";
+           
             if ($created){
-                echo "Usuário criado com sucesso!";
+                $this->session->flash('success', 'Usuário criado com sucesso!');
+                $this->redirect('/login');
             } else{
-                echo "Erro ao tentar criar usuário, tente novamente!";
+                $this->session->flash('error', 'Erro ao tentar criar usuário, tente novamente!');
+                $this->redirect('/register');
             }
 
         } else {
-            $this->render('auth/register');
+            $this->render('auth/sregister');
         }
     }
 
 
     public function logout() {
-        session_start();
-        session_destroy();        // Finaliza a sessão do usuário
-        $this->redirect("/login"); // Redireciona para a tela de login
+        $this->session->destroy();// Finaliza a sessão do usuário
+        $this->redirect("/"); // Redireciona para a home
         exit;
     }
 
