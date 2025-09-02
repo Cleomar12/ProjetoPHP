@@ -44,7 +44,7 @@
             background: #e74c3c;
             color: white;
             padding: 8px 16px;
-            border-radius: 5px;
+            border-radius: 8px;
             text-decoration: none;
         }
         .logout:hover {
