@@ -9,8 +9,8 @@ class Controller {
     protected string $basePath = '';
     protected Session  $session;
 
-    public function __construct() {
-        $this->session = new Session();
+    public function __construct(Session $session) {
+        $this->session = $session;
     }
     
     protected function render(string $view, array $data = []) {

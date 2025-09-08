@@ -3,77 +3,84 @@ namespace app\controllers;
 
 // Carrega manualmente o Controller
 require_once __DIR__ . '/../core/Controller.php';
-require_once __DIR__ . '/../models/User.php';
+require_once __DIR__ . '/../services/AuthFactory.php';
 
 use app\core\Controller;
-use app\models\User;
+use app\services\AuthFactory;
+use app\services\Session; 
 
 class AuthController extends Controller {
+    private AuthFactory $authFactory;
+
+    public function __construct(Session $session)
+    {
+        parent::__construct($session);
+        $this->authFactory = new AuthFactory();
+    }
+    /**
+     * Método único de login que decide qual provedor usar com base no campo auth type
+     */
     public function login() {
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $username = $_POST['username'] ?? null;
-            $password = $_POST['password'] ?? null;
-            
-            if (!$username || !$password){
-                $this->session->flash('error', 'Preencha usuário e senha!');
-                $this->redirect('/login');
-                return;
-            }
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->render('auth/login');
+            return;
+        } 
+        
+        // Recebe tipo de autenticação do formulário
+        $authType = $_POST['auth_type'] ??'database';
+        // Cria a autenticação correta
+        $authService = $this->authFactory->make($authType);
 
-            $user = User::verify($username, $password);
+        $username = $_POST['username'] ?? '';
+        $password = $_POST['password'] ?? '';
+
+
+
+        $user = $authService->authenticate($username, $password);
 
             if ($user){
                 $this->session->set('user', $user['username']);
                 $this->session->flash('success', 'Login realizado com sucesso!');
-                $this->redirect('/dashboard'); // Redireciona após login
+                $this->redirect('/dashboard');
+                return;
             } else {
-                $this->session->flash('error', 'Usuário ou senha inválidos!');
+                $this->session->flash('error', 'Usuário ou senhar inválidos!');
                 $this->redirect('/login');
+
             }
-        } else {
-            // Se for GET, apenas mostra a view
-            $this->render('auth/login');
-        }
+
+
     }
 
+    /**
+     * método de registro usando apenas login local
+     */
     public function register() {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $username = $_POST['username'] ?? null;
-            $password = $_POST['password'] ?? null;
-            $passwordConfirm = $_POST['password_confirm'] ?? null;
-
-            if (!$username || !$password || !$passwordConfirm) {
-                $this->session->flash('error', 'Preencha todos os campos.');
-                $this->redirect('/register');
-                return;
-            }
-
-            if ($password !== $passwordConfirm) {
-                $this->session->flash('error', 'As senhas não coincidem.');
-                $this->redirect('/register');
-                return;
-            }
-
-            if (User::findByUsername($username)) {
-                $this->session->flash('error', 'Usuário já existe!');
-                $this->redirect('/register');
-                return;
-            }
-
-            $created = User::create($username, $password);
-           
-            if ($created){
-                $this->session->flash('success', 'Usuário criado com sucesso!');
-                $this->redirect('/login');
-            } else{
-                $this->session->flash('error', 'Erro ao tentar criar usuário, tente novamente!');
-                $this->redirect('/register');
-            }
-
-        } else {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->render('auth/sregister');
+            return;
+
+        } 
+
+        $username = $_POST['username'] ?? '';
+        $email = $_POST['email'] ?? '';
+        $password = $_POST['password'] ?? '';
+        $confirm = $_POST['password_confirm'] ?? '';
+
+        // Para registro, usamos sempre o DatabaseAuthService
+        $authService = $this->authFactory->make('database');
+        $result = $authService->register($username, $password, $confirm,$email);
+
+        if (isset($result['success'])) {
+            $this->session->flash('success', $result['success']);
+            $this->redirect('/login');
+        } else {
+            $this->session->flash('error', $result['error']);
+            $this->redirect('/register');
         }
+
+
     }
 
 

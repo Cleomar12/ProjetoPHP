@@ -1,17 +1,19 @@
 <?php
 namespace app\core;
 
+require_once __DIR__. '/../services/session.php';
+
+use app\services\Session;
+
 class Router {
     private $routes;
-    private $basepath = '';// Define o caminho base do projeto no XAMPP
+    private $basepath = ''; // Define o caminho base do projeto no XAMPP
+    private Session $session; 
 
     public function __construct() {
-        ini_set('display_errors', 1);
-        ini_set('display_startup_errors', 1);
-        error_reporting(E_ALL);
-
+        
         $this->routes = require __DIR__ . '/routes.php';
-        session_start();
+        $this->session = new Session(); //Cria um objeto Session e inicia uma sessão
     }
 
     public function run() {
@@ -20,7 +22,7 @@ class Router {
         if ($url === '/' || $url == '' ){
             $url = '/';
         }
-        echo $url; // apenas para teste
+
         if (array_key_exists($url, $this->routes)) {
             $route = $this->routes[$url];
 
@@ -44,7 +46,7 @@ class Router {
 
                 $controllerClass = "app\\controllers\\$controller"; 
                 if (class_exists($controllerClass)){
-                    $obj = new $controllerClass();
+                    $obj = new $controllerClass($this->session); // Cria uma instancia do controller e injeta um objeto Session
 
                     if (method_exists($obj, $action)) {
                         call_user_func([$obj, $action]);

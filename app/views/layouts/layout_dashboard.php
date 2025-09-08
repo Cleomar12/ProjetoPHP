@@ -4,17 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $title ?? 'Projeto PHP' ?></title>
-    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/dashboard_styles.css">
     <link rel="stylesheet" href="/css/flash.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-pap0h..." crossorigin="anonymous" referrerpolicy="no-referrer" />
-
 </head>
 <body>
     <header>
         <nav>
-            <a href="/">Início</a>
-            <a href="/login">Entrar</a>
-            <a href="/register">Registrar</a>
+            <a href="/dashboard">Início</a>
+            <a href="#">Perfil</a>
+            <a href="#">Configurações</a>
+            <a class="logout" href="/logout">Sair</a>
         </nav>
     </header>
     <?php include __DIR__ . '/../components/flash.php'; ?>

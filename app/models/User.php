@@ -12,48 +12,102 @@ class User {
         return $db->conectar();
     }
 
-    public static function create($username, $password) {
+    /**
+     * Cria um usuário (database ou oauth)
+     * Espera um array associativo com os campos da tabela
+     */
+    public static function create(array $data) {
         $pdo = self::getConnection();
-        $hashed = password_hash($password, PASSWORD_DEFAULT);
-        $stmt = $pdo->prepare("INSERT INTO users (username, password) VALUES (?, ?)");
-        return $stmt->execute([$username, $hashed]);
+
+        $stmt = $pdo->prepare("
+            INSERT INTO users (username, email, password_hash, provider, provider_id)
+            VALUES (:username, :email, :password_hash, :provider, :provider_id)
+        ");
+
+        return $stmt->execute([
+            ':username'     => $data['username'],
+            ':email'        => $data['email'],
+            ':password_hash'=> $data['password_hash'] ?? null,
+            ':provider'     => $data['provider'],
+            ':provider_id'  => $data['provider_id'] ?? null,
+        ]);
     }
 
-    public static function findByUsername($username) {
+    /**
+     * Verifica se já existe usuário pelo username ou email
+     */
+    public static function exists(string $username, string $email): bool {
         $pdo = self::getConnection();
-        $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ?");
-        $stmt->execute([$username]);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+        $stmt = $pdo->prepare("SELECT id FROM users WHERE username = ? OR email = ?");
+        $stmt->execute([$username, $email]);
+        return (bool) $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    public static function getAll($username) {
+    /**
+     * Busca usuário pelo username (apenas provider=database)
+     */
+    public static function findByUsername(string $username): ?array {
         $pdo = self::getConnection();
-        $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ?");
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ? AND provider = 'database'");
         $stmt->execute([$username]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+
+    /**
+     * Busca usuário pelo provider e provider_id
+     */
+    public static function findByProvider(string $provider, string $providerId): ?array {
+        $pdo = self::getConnection();
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE provider = ? AND provider_id = ?");
+        $stmt->execute([$provider, $providerId]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+
+    /**
+     * Busca todos usuários (exemplo)
+     */
+    public static function getAll(): array {
+        $pdo = self::getConnection();
+        $stmt = $pdo->query("SELECT * FROM users");
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public static function update($id, $username, $password = null) {
+    /**
+     * Atualiza usuário
+     */
+    public static function update(int $id, array $data): bool {
         $pdo = self::getConnection();
-        if ($password) {
-            $hashed = password_hash($password, PASSWORD_DEFAULT);
-            $stmt = $pdo->prepare("UPDATE users SET username = ?, password = ? WHERE id = ?");
-            return $stmt->execute([$username, $hashed, $id]);
-        } else {
-            $stmt = $pdo->prepare("UPDATE users SET username = ? WHERE id = ?");
-            return $stmt->execute([$username, $id]);
+
+        $fields = [];
+        $params = [':id' => $id];
+
+        foreach ($data as $key => $value) {
+            $fields[] = "$key = :$key";
+            $params[":$key"] = $value;
         }
+
+        $sql = "UPDATE users SET " . implode(", ", $fields) . " WHERE id = :id";
+        $stmt = $pdo->prepare($sql);
+
+        return $stmt->execute($params);
     }
 
-    public static function delete($id) {
+    /**
+     * Deleta usuário
+     */
+    public static function delete(int $id): bool {
         $pdo = self::getConnection();
         $stmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
         return $stmt->execute([$id]);
     }
 
-    public static function verify($username, $password) {
+    /**
+     * Verifica login database
+     */
+    public static function verify(string $username, string $password): ?array {
         $user = self::findByUsername($username);
-        if ($user && password_verify($password, $user['password'])) {
+
+        if ($user && password_verify($password, $user['password_hash'])) {
             return $user;
         }
         return null;
